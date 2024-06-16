@@ -3,22 +3,23 @@ package fireball
 import (
     "encoding/json"
     "github.com/google/uuid"
+    "golang.org/x/net/websocket"
     "log/slog"
     "net/http"
 )
 
 type Response struct {
-    content    []byte
-    statusCode int
-    headers    map[string]string
-    cookies    []*http.Cookie
+    Content    []byte
+    StatusCode int
+    Headers    map[string]string
+    Cookies    []*http.Cookie
 }
 
 func (r Response) SetHeader(key string, value string) {
-    if r.headers == nil {
-        r.headers = make(map[string]string)
+    if r.Headers == nil {
+        r.Headers = make(map[string]string)
     }
-    r.headers[key] = value
+    r.Headers[key] = value
 }
 
 func (r Response) SetContentType(contentType string) {
@@ -26,14 +27,14 @@ func (r Response) SetContentType(contentType string) {
 }
 
 func (r Response) AddCookie(cookie *http.Cookie) {
-    if r.cookies == nil {
-        r.cookies = make([]*http.Cookie, 0)
+    if r.Cookies == nil {
+        r.Cookies = make([]*http.Cookie, 0)
     }
-    r.cookies = append(r.cookies, cookie)
+    r.Cookies = append(r.Cookies, cookie)
 }
 
 func (r Response) SetStatusCode(code int) {
-    r.statusCode = code
+    r.StatusCode = code
 }
 
 // ResponseJson returns a response with a JSON content type
@@ -63,10 +64,10 @@ func ResponseBytes(data []byte, contentType string) *Response {
     headers["Content-Type"] = contentType
 
     return &Response{
-        content:    data,
-        statusCode: 200,
-        headers:    headers,
-        cookies:    make([]*http.Cookie, 0),
+        Content:    data,
+        StatusCode: 200,
+        Headers:    headers,
+        Cookies:    make([]*http.Cookie, 0),
     }
 }
 
@@ -99,17 +100,17 @@ func (e Engine) Route(route string, handler HandlerFunc) {
             return
         }
 
-        for key, value := range r.headers {
+        for key, value := range r.Headers {
             w.Header().Set(key, value)
         }
 
-        for _, cookie := range r.cookies {
+        for _, cookie := range r.Cookies {
             http.SetCookie(w, cookie)
         }
 
-        w.WriteHeader(r.statusCode)
+        w.WriteHeader(r.StatusCode)
 
-        _, writeError := w.Write(r.content)
+        _, writeError := w.Write(r.Content)
         if writeError != nil {
             logger.Error(writeError.Error())
         }
@@ -117,4 +118,17 @@ func (e Engine) Route(route string, handler HandlerFunc) {
     }
 
     e.mux.HandleFunc(route, newRoute)
+}
+
+func (e Engine) RouteWs(route string, action func(ws *websocket.Conn)) {
+    config := &websocket.Config{
+        Origin: nil,
+    }
+
+    chatHandler := websocket.Server{
+        Handler: action,
+        Config:  *config,
+    }
+
+    e.mux.Handle(route, chatHandler)
 }
