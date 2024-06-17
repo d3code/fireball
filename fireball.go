@@ -1,49 +1,35 @@
 package fireball
 
 import (
-    "log"
+    "fmt"
+    "github.com/d3code/xlog"
     "log/slog"
     "net/http"
-    "strings"
 )
 
-type Config struct {
-    Addr string
-    Log  Log
-}
-
-type Log struct {
-    Level slog.Level
-    Json  bool
-}
-
 type Engine struct {
-    Config *Config
-    Logger *slog.Logger
-    mux    *http.ServeMux
+    Config   *Config
+    GroupMap map[string]*GroupContext
+    Logger   *slog.Logger
 }
 
 type HandlerFunc func(*Context) (*Response, error)
 
 func New(config *Config) *Engine {
-    mux := http.NewServeMux()
-    logger := createLogger(config.Log.Level, config.Log.Json)
-
     return &Engine{
-        Config: config,
-        Logger: logger,
-        mux:    mux,
+        Config:   config,
+        GroupMap: make(map[string]*GroupContext),
     }
 }
 
-// Default uses a predefined configuration for the fireball engine
+// Default uses a predefined configuration for the fireball engine.
 // The default configuration is to listen to all hosts on port 8080
 func Default() *Engine {
     config := &Config{
         Addr: ":8080",
         Log: Log{
             Level: slog.LevelInfo,
-            Json:  true,
+            Json:  false,
         },
     }
 
@@ -51,32 +37,43 @@ func Default() *Engine {
 }
 
 func (e Engine) Run() error {
-    return http.ListenAndServe(e.Config.Addr, middlewareCORS(e.mux))
-}
+    muxBase := http.NewServeMux()
 
-// middlewareCORS is a middlewareLog that adds CORS headers to the response if the Origin header is set
-func middlewareCORS(h http.Handler) http.Handler {
-    interceptor := func(w http.ResponseWriter, r *http.Request) {
-        if origin := r.Header.Get("Origin"); origin != "" {
+    for path, group := range e.GroupMap {
+        mux := http.NewServeMux()
 
-            w.Header().Set("Access-Control-Allow-Origin", origin)
-
-            if r.Method == "OPTIONS" && r.Header.Get("Access-Control-Request-Method") != "" {
-                headers := []string{"Content-Type", "Accept", "Authorization", "X-Access-Token", "X-Refresh-Token"}
-                methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE"}
-
-                w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
-                w.Header().Set("Access-Control-Expose-Headers", strings.Join(headers, ","))
-
-                w.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
-
-                log.Println("CORS preflight request")
-
-                return
-            }
+        for route, handler := range group.routeMap {
+            mux.HandleFunc(route, group.getHandler(handler, &e))
         }
-        h.ServeHTTP(w, r)
+
+        for route, handler := range group.websocketMap {
+            mux.Handle(route, handler)
+        }
+
+        var wrappedHandler http.HandlerFunc = mux.ServeHTTP
+        for _, middleware := range group.middleware {
+            wrappedHandler = middleware(wrappedHandler)
+        }
+
+        logMiddleware := func(next http.Handler) http.Handler {
+            return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+                if path != "/" {
+                    newPath := r.URL.Path[len(path)-1:]
+                    r.URL.Path = newPath
+                }
+                next.ServeHTTP(w, r)
+            })
+        }
+
+        muxBase.Handle(path, logMiddleware(wrappedHandler))
     }
 
-    return http.HandlerFunc(interceptor)
+    logMiddleware := func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            xlog.Debug(fmt.Sprintf("Request [ %s %s ]", r.Method, r.RequestURI))
+            next.ServeHTTP(w, r)
+        })
+    }
+
+    return http.ListenAndServe(e.Config.Addr, logMiddleware(muxBase))
 }
