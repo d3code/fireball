@@ -1,0 +1,7 @@
+go 1.22.4
+
+use .
+
+replace (
+	github.com/d3code/xlog => ../xlog
+)

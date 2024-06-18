@@ -1,14 +1,13 @@
 package fireball
 
 import (
-    "log/slog"
+    "github.com/d3code/xlog"
     "net/http"
 )
 
 type Context struct {
-    r      *http.Request
-    body   []byte
-    Logger *slog.Logger
+    r    *http.Request
+    body []byte
 }
 
 func (c Context) GetAuthorization() string {
@@ -55,7 +54,7 @@ func (c Context) GetBody() []byte {
     body := make([]byte, c.r.ContentLength)
     _, err := c.r.Body.Read(body)
     if err != nil {
-        c.Logger.Error(err.Error())
+        xlog.Error(err.Error())
         return nil
     }
 

@@ -19,8 +19,8 @@ func createLogger(level slog.Level, logJson bool) *slog.Logger {
     }
 
     logger := slog.New(handler).With(
-        //slog.String("service", "fireball"),
-        //slog.String("user", os.Getenv("USER")),
+        slog.String("service", "fireball"),
+        slog.String("user", os.Getenv("USER")),
     )
     return logger
 }
