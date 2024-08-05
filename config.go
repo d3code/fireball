@@ -1,13 +1,11 @@
 package fireball
 
-import "log/slog"
-
 type Config struct {
-    Addr string
+    Host string
+    Port int
     Log  Log
 }
 
 type Log struct {
-    Level slog.Level
-    Json  bool
+    Request  bool
 }

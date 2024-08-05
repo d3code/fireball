@@ -1,8 +1,10 @@
 package fireball
 
 import (
-    "github.com/d3code/xlog"
-    "net/http"
+	"io"
+	"net/http"
+
+	"github.com/d3code/xlog"
 )
 
 type Context struct {
@@ -10,35 +12,35 @@ type Context struct {
     body []byte
 }
 
-func (c Context) GetAuthorization() string {
+func (c *Context) GetAuthorization() string {
     return c.r.Header.Get("Authorization")
 }
 
-func (c Context) GetHeader(header string) string {
+func (c *Context) GetHeader(header string) string {
     return c.r.Header.Get(header)
 }
 
-func (c Context) GetHeaders() http.Header {
+func (c *Context) GetHeaders() http.Header {
     return c.r.Header
 }
 
-func (c Context) GetMethod() string {
+func (c *Context) GetMethod() string {
     return c.r.Method
 }
 
-func (c Context) GetPath() string {
+func (c *Context) GetPath() string {
     return c.r.URL.Path
 }
 
-func (c Context) GetPathParam(param string) string {
+func (c *Context) GetPathParam(param string) string {
     return c.r.PathValue(param)
 }
 
-func (c Context) GetQueryString(query string) string {
+func (c *Context) GetQueryString(query string) string {
     return c.r.URL.Query().Get(query)
 }
 
-func (c Context) GetCookie(name string) *http.Cookie {
+func (c *Context) GetCookie(name string) *http.Cookie {
     cookie, err := c.r.Cookie(name)
     if err != nil {
         return nil
@@ -46,13 +48,12 @@ func (c Context) GetCookie(name string) *http.Cookie {
     return cookie
 }
 
-func (c Context) GetBody() []byte {
+func (c *Context) GetBody() []byte {
     if c.body != nil {
         return c.body
     }
 
-    body := make([]byte, c.r.ContentLength)
-    _, err := c.r.Body.Read(body)
+    body, err := io.ReadAll(c.r.Body)
     if err != nil {
         xlog.Error(err.Error())
         return nil
@@ -62,6 +63,6 @@ func (c Context) GetBody() []byte {
     return body
 }
 
-func (c Context) GetBodyString() string {
+func (c *Context) GetBodyString() string {
     return string(c.GetBody())
 }

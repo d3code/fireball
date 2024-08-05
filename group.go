@@ -1,10 +1,11 @@
 package fireball
 
 import (
-    "github.com/d3code/xlog"
-    "golang.org/x/net/websocket"
-    "net/http"
-    "strings"
+	"net/http"
+	"strings"
+
+	"github.com/d3code/xlog"
+	"golang.org/x/net/websocket"
 )
 
 type GroupContext struct {
@@ -14,7 +15,15 @@ type GroupContext struct {
     websocketMap map[string]websocket.Server
 }
 
-func (e Engine) Group(prefix string) *GroupContext {
+func (e *Engine) Group(prefix string) *GroupContext {
+    if !strings.HasPrefix(prefix, "/") {
+        prefix = "/" + prefix
+    }
+
+    if !strings.HasSuffix(prefix, "/") {
+        prefix += "/"
+    }
+
     if group, ok := e.GroupMap[prefix]; ok {
         return group
     }
@@ -66,12 +75,12 @@ func (g *GroupContext) RouteWs(route string, action func(ws *websocket.Conn)) {
         Origin: nil,
     }
 
-    chatHandler := websocket.Server{
+    wsHandler := websocket.Server{
         Handler: action,
         Config:  *config,
     }
 
-    g.websocketMap[route] = chatHandler
+    g.websocketMap[route] = wsHandler
 }
 
 func (g *GroupContext) getHandler(handler HandlerFunc, e *Engine) http.HandlerFunc {
@@ -107,7 +116,5 @@ func (g *GroupContext) getHandler(handler HandlerFunc, e *Engine) http.HandlerFu
         if writeError != nil {
             xlog.Error(writeError.Error())
         }
-        return
     }
-
 }

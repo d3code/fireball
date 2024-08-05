@@ -1,8 +1,8 @@
 package fireball
 
 import (
-    "encoding/json"
-    "net/http"
+	"encoding/json"
+	"net/http"
 )
 
 type Response struct {
@@ -12,25 +12,25 @@ type Response struct {
     Cookies    []*http.Cookie
 }
 
-func (r Response) SetHeader(key string, value string) {
+func (r *Response) SetHeader(key string, value string) {
     if r.Headers == nil {
         r.Headers = make(map[string]string)
     }
     r.Headers[key] = value
 }
 
-func (r Response) SetContentType(contentType string) {
+func (r *Response) SetContentType(contentType string) {
     r.SetHeader("Content-Type", contentType)
 }
 
-func (r Response) AddCookie(cookie *http.Cookie) {
+func (r *Response) AddCookie(cookie *http.Cookie) {
     if r.Cookies == nil {
         r.Cookies = make([]*http.Cookie, 0)
     }
     r.Cookies = append(r.Cookies, cookie)
 }
 
-func (r Response) SetStatusCode(code int) {
+func (r *Response) SetStatusCode(code int) {
     r.StatusCode = code
 }
 

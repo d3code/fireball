@@ -1,31 +1,56 @@
 package main
 
 import (
-    "github.com/d3code/fireball"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/d3code/fireball"
+	"github.com/d3code/xlog"
 )
 
 func main() {
 
     engine := fireball.Default()
 
-    engine.Route("GET /", func(c *fireball.Context) (*fireball.Response, error) {
+    group := engine.Group("/go")
+    group.Route("GET /", func(c *fireball.Context) (*fireball.Response, error) {
 
-        name := c.GetPathParam("name")
+        name := c.GetQueryString("name")
         query := c.GetQueryString("query")
 
-        c.Logger.Info("Hello " + name)
-        c.Logger.Info("Query " + query)
-
-        return fireball.ResponseJson(rootResponse{
+        response, _ := fireball.ResponseJson(rootResponse{
             Message: "Hello " + name,
             Query:   query,
         })
+
+        response.StatusCode = 201
+
+        return response, nil
     })
 
-    engine.Logger.Info("Server is running on " + engine.Config.Addr)
+    go func() {
+        time.Sleep(1 * time.Second)
+        x, err := http.Get(fmt.Sprintf("http://localhost:%v/go?name=world&query=example", engine.Config.Port))
+        if err != nil {
+            xlog.Error(err.Error())
+            return
+        }
+
+        response, err := io.ReadAll(x.Body)
+        if err != nil {
+            xlog.Error(err.Error())
+            return
+        }
+
+        xlog.Info(string(response))
+    }()
+
+    xlog.Info("Server running at address " + engine.Addr())
     err := engine.Run()
     if err != nil {
-        engine.Logger.Error(err.Error())
+        xlog.Error(err.Error())
         return
     }
 }
