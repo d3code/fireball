@@ -1,5 +1,7 @@
 github.com/d3code/xlog v0.0.0-20240616235105-9390f807bd37 h1:YDr394Ed+f+Ba4GpOfgcgFJCa3MlccPr6uPA1JG17W0=
 github.com/d3code/xlog v0.0.0-20240616235105-9390f807bd37/go.mod h1:r0hxuNNjP8FNNcIqb2tI0k92FOCpwotSF3RM6Yd55jc=
+github.com/d3code/xlog v0.0.0-20250213132509-83064daa9724 h1:/BdOo9ekvkGUiJI9I5LzhQdT3nLLjA/LycFRVbi8Xc0=
+github.com/d3code/xlog v0.0.0-20250213132509-83064daa9724/go.mod h1:N3wu81tOOEaODtBhVBu1E0Oxdb0CUxDDyGIkp6w+FVk=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 golang.org/x/net v0.25.0 h1:d/OCCoBEUq33pjydKrGQhw7IlUPI2Oylr+8qLx49kac=

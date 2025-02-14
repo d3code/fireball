@@ -8,6 +8,6 @@ require (
 )
 
 require (
-	github.com/d3code/xlog v0.0.0-20240616235105-9390f807bd37 // indirect
+	github.com/d3code/xlog v0.0.0-20250213132509-83064daa9724 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
